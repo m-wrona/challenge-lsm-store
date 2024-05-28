@@ -1,4 +1,4 @@
-package segments_disk_writer
+package ext
 
 import (
 	"bytes"
@@ -12,7 +12,7 @@ import (
 )
 
 func Benchmark_JSON_Read(b *testing.B) {
-	const jsonFilePath = "segments.json"
+	const jsonFilePath = "../segments.json"
 
 	if _, err := os.Stat(jsonFilePath); errors.Is(err, os.ErrNotExist) {
 		b.Skipf("skipping benchmark because segments.json does not exist: %s", err)

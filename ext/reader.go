@@ -1,4 +1,4 @@
-package segments_disk_writer
+package ext
 
 import (
 	"io"
