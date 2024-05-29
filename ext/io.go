@@ -1,4 +1,4 @@
-package storage
+package ext
 
 import (
 	"encoding/binary"
@@ -12,4 +12,8 @@ func write[T any](w io.Writer, v T) error {
 	// on the other hand network protocols use Big Endian more often.
 	// tbh. not sure whether it has bigger meaning nowadays...
 	return binary.Write(w, binary.LittleEndian, v)
+}
+
+func read[T any](r io.Reader, v T) error {
+	return binary.Read(r, binary.LittleEndian, &v)
 }

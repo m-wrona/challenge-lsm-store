@@ -10,7 +10,19 @@ import (
 	"testing"
 )
 
+type segments struct {
+	Entries [][]entry `json:"segments"`
+}
+
+type entry struct {
+	Term          string `json:"term"`
+	DocId         uint64 `json:"doc_id"`
+	TermFrequency uint32 `json:"term_frequency"`
+}
+
 func Test_JSON_Read(t *testing.T) {
+	t.Parallel()
+
 	const testJson = `
 {
     "segments": [
@@ -30,8 +42,8 @@ func Test_JSON_Read(t *testing.T) {
 }
 `
 
-	var expJsonSegments = Segments{
-		Entries: [][]Entry{
+	var expJsonSegments = segments{
+		Entries: [][]entry{
 			{
 				{
 					Term:          "great",
@@ -51,7 +63,7 @@ func Test_JSON_Read(t *testing.T) {
 		name      string
 		in        io.Reader
 		unmarshal Unmarshal
-		want      Segments
+		want      segments
 		wantErr   error
 	}{
 		{
@@ -82,7 +94,8 @@ func Test_JSON_Read(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := Read(tt.in, tt.unmarshal)
+			got := &segments{}
+			err := Read(tt.in, tt.unmarshal, &got)
 			if tt.wantErr != nil {
 				assert.NotNilf(t, err, "must return error: %w", tt.wantErr)
 				if err != nil {

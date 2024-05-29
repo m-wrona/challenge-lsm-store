@@ -1,6 +1,9 @@
 package storage
 
-import "io"
+import (
+	"io"
+	"segments-disk-writer/ext"
+)
 
 // Entry represents single block of data that can be stored.
 // TODO clarify how to manage different versions (i.e if new fields should be added or some removed etc.)
@@ -13,6 +16,10 @@ type Entry struct {
 	Bytes   []byte
 }
 
-func writeEntry(w io.Writer, e Entry) (int, error) {
-	return writeWithChecksum(w, e.Version, e.Bytes)
+func WriteEntry(w io.Writer, e Entry) (int, error) {
+	return ext.WriteChunk(w, e.Version, e.Bytes)
+}
+
+func ReadEntry(r io.Reader, e *Entry) (int, error) {
+	return ext.ReadChunk(r, e.Version, e.Bytes)
 }

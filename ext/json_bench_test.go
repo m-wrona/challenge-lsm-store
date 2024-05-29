@@ -12,6 +12,7 @@ import (
 )
 
 func Benchmark_JSON_Read(b *testing.B) {
+	// TODO add overriding by env vars
 	const jsonFilePath = "../segments.json"
 
 	if _, err := os.Stat(jsonFilePath); errors.Is(err, os.ErrNotExist) {
@@ -24,16 +25,18 @@ func Benchmark_JSON_Read(b *testing.B) {
 	require.Nilf(b, err, "json read error: %w", err)
 
 	b.Run("standard json", func(b *testing.B) {
+		s := &segments{}
 		for i := 0; i < b.N; i++ {
 			r := bytes.NewReader(fileBytes)
-			_, _ = Read(r, json.Unmarshal)
+			_ = Read(r, json.Unmarshal, s)
 		}
 	})
 
 	b.Run("jsoniter", func(b *testing.B) {
+		s := &segments{}
 		for i := 0; i < b.N; i++ {
 			r := bytes.NewReader(fileBytes)
-			_, _ = Read(r, jsoniter.ConfigCompatibleWithStandardLibrary.Unmarshal)
+			_ = Read(r, jsoniter.ConfigCompatibleWithStandardLibrary.Unmarshal, s)
 		}
 	})
 
