@@ -1,19 +1,20 @@
-package segments_disk_writer
+package memtable
 
 import (
 	"github.com/stretchr/testify/assert"
+	"segments-disk-writer"
 	"testing"
 )
 
 func TestMemtable_UpsertAndGet(t *testing.T) {
 	type entry struct {
-		key   Key
-		value Value
+		key   segments_disk_writer.Key
+		value segments_disk_writer.Value
 	}
 	tests := []struct {
 		name    string
 		upserts []entry
-		delete  []Key
+		delete  []segments_disk_writer.Key
 		expGet  []entry
 	}{
 		{
@@ -86,7 +87,7 @@ func TestMemtable_UpsertAndGet(t *testing.T) {
 					value: []byte("value2"),
 				},
 			},
-			delete: []Key{
+			delete: []segments_disk_writer.Key{
 				[]byte("key2"),
 			},
 			expGet: []entry{
