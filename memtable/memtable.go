@@ -3,15 +3,14 @@ package memtable
 import (
 	"bytes"
 	"github.com/google/btree"
-	"segments-disk-writer"
 )
 
 const btreeDegree = 3
 
 type (
 	memtableEntry struct {
-		key   segments_disk_writer.Key
-		value segments_disk_writer.Value
+		key   []byte
+		value []byte
 	}
 
 	Memtable struct {
@@ -32,13 +31,13 @@ func NewMemtable() *Memtable {
 	}
 }
 
-func (m *Memtable) Upsert(key segments_disk_writer.Key, value segments_disk_writer.Value) bool {
+func (m *Memtable) Upsert(key, value []byte) bool {
 	_, isNew := m.tree.ReplaceOrInsert(memtableEntry{key, value})
 	m.size += len(key) + len(value)
 	return isNew
 }
 
-func (m *Memtable) Get(key segments_disk_writer.Key) (segments_disk_writer.Value, bool) {
+func (m *Memtable) Get(key []byte) ([]byte, bool) {
 	v, found := m.tree.Get(memtableEntry{key, nil})
 	if found {
 		return v.value, true
@@ -46,7 +45,7 @@ func (m *Memtable) Get(key segments_disk_writer.Key) (segments_disk_writer.Value
 	return nil, false
 }
 
-func (m *Memtable) Delete(key segments_disk_writer.Key) (segments_disk_writer.Value, bool) {
+func (m *Memtable) Delete(key []byte) ([]byte, bool) {
 	v, found := m.tree.Delete(memtableEntry{key, nil})
 	if found {
 		return v.value, true

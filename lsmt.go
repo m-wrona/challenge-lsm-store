@@ -1,33 +1,33 @@
 package segments_disk_writer
 
-import "segments-disk-writer/memtable"
+import (
+	"io"
+	"segments-disk-writer/memtable"
+)
 
 type LSMTSettings struct {
 	MemoryThreshold int
 }
 
-type logger interface {
-	Append(key Key, value Value) error
-	Tombstone(key Key) error
-}
-
 type LSMT struct {
 	memory   *memtable.Memtable
 	flush    *memtable.Memtable
-	wal      logger
+	wal      io.Writer
 	settings LSMTSettings
 }
 
-func NewLSMT(wal logger, settings LSMTSettings) *LSMT {
+func NewLSMT(wal io.Writer, settings LSMTSettings) *LSMT {
 	return &LSMT{
 		wal: wal,
 	}
 }
 
-func (t *LSMT) Put(key Key, value Value) error {
-	if err := t.wal.Append(key, value); err != nil {
-		return err
-	}
+func (t *LSMT) Put(key []byte, value []byte) error {
+	//if err := t.wal.Append(wal.Entry{
+	//	SystemVersion: version,
+	//}); err != nil {
+	//	return err
+	//}
 
 	t.memory.Upsert(key, value)
 	if t.memory.GetSize() > t.settings.MemoryThreshold {
@@ -37,7 +37,7 @@ func (t *LSMT) Put(key Key, value Value) error {
 	return nil
 }
 
-func (t *LSMT) Get(key Key) (Value, error) {
+func (t *LSMT) Get(key []byte) ([]byte, error) {
 	value, found := t.memory.Get(key)
 	if found {
 		return value, nil
