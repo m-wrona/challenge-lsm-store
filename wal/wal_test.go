@@ -19,6 +19,8 @@ type testRead struct {
 }
 
 func Test_WAL_WriteRead(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name    string
 		content [][]byte

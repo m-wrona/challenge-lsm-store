@@ -1,8 +1,9 @@
 package segments_disk_writer
 
 import (
-	"io"
+	"bytes"
 	"segments-disk-writer/memtable"
+	"segments-disk-writer/wal"
 )
 
 type LSMTSettings struct {
@@ -12,23 +13,33 @@ type LSMTSettings struct {
 type LSMT struct {
 	memory   *memtable.Memtable
 	flush    *memtable.Memtable
-	wal      io.Writer
+	wal      *wal.Writer
 	settings LSMTSettings
+	buff     *bytes.Buffer
 }
 
-func NewLSMT(wal io.Writer, settings LSMTSettings) *LSMT {
+func NewLSMT(wal *wal.Writer, settings LSMTSettings) *LSMT {
 	return &LSMT{
-		wal: wal,
+		wal:  wal,
+		buff: bytes.NewBuffer(nil),
 	}
 }
 
 func (t *LSMT) Put(key []byte, value []byte) error {
-	//if err := t.wal.Append(wal.Entry{
-	//	SystemVersion: version,
-	//}); err != nil {
-	//	return err
-	//}
+	// WAL
+	defer t.buff.Reset()
+	walEntry := wal.EntryV1{
+		Key:   key,
+		Value: value,
+	}
+	if err := walEntry.Encode(t.buff); err != nil {
+		return err
+	}
+	if err := t.wal.Write(t.buff.Bytes()); err != nil {
+		return err
+	}
 
+	// memory
 	t.memory.Upsert(key, value)
 	if t.memory.GetSize() > t.settings.MemoryThreshold {
 		//TODO flush
