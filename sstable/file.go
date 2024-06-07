@@ -10,7 +10,7 @@ const (
 	fileWriteFlags = os.O_WRONLY | os.O_CREATE | os.O_APPEND | os.O_TRUNC
 	fileReadFlags  = os.O_RDONLY
 
-	fileWriteOnlyMode = 0o222
+	fileWriteReadMode = 0o666
 	fileReadOnlyMode  = 0o444
 
 	dataFileName        = "data.db"
@@ -33,7 +33,7 @@ func NewFileWriter(dirPath string) (*Writer, error) {
 		return nil, ErrFileNotDirectory
 	}
 
-	data, index, sparse, err := openDBFiles(dirPath, fileWriteFlags, fileWriteOnlyMode)
+	data, index, sparse, err := openDBFiles(dirPath, fileWriteFlags, fileWriteReadMode)
 	if err != nil {
 		return nil, err
 	}

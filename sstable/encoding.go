@@ -77,11 +77,8 @@ func encodeKeyOffset(w io.Writer, key []byte, offset int) (int, error) {
 
 func decodeKeyOffset(r io.Reader) ([]byte, int, error) {
 	key, value, err := decode(r)
-	if err != nil && err != io.EOF {
+	if err != nil {
 		return nil, 0, err
-	}
-	if err == io.EOF {
-		return nil, 0, nil
 	}
 
 	offset := decodeInt(value)

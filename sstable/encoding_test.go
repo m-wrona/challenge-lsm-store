@@ -8,6 +8,8 @@ import (
 )
 
 func Test_SSTable_EncodeDecode(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name  string
 		key   []byte
