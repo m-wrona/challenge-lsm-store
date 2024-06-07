@@ -2,9 +2,9 @@ package wal
 
 import (
 	"bytes"
+	"challenge-lsm-store/storageio"
 	"encoding/binary"
 	"io"
-	"segments-disk-writer/storageio"
 )
 
 type Reader struct {

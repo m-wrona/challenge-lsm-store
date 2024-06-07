@@ -1,8 +1,8 @@
 package memtable_test
 
 import (
+	"challenge-lsm-store/memtable"
 	"github.com/stretchr/testify/assert"
-	"segments-disk-writer/memtable"
 	"testing"
 )
 

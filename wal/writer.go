@@ -1,9 +1,9 @@
 package wal
 
 import (
+	"challenge-lsm-store/storageio"
 	"encoding/binary"
 	"io"
-	"segments-disk-writer/storageio"
 )
 
 type WriterSync = func() error

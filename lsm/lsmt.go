@@ -1,9 +1,9 @@
-package segments_disk_writer
+package lsm
 
 import (
 	"bytes"
-	"segments-disk-writer/memtable"
-	"segments-disk-writer/wal"
+	"challenge-lsm-store/memtable"
+	"challenge-lsm-store/wal"
 )
 
 type LSMTSettings struct {

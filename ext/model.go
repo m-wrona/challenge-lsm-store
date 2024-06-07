@@ -1,11 +1,14 @@
 package ext
 
-import "segments-disk-writer"
-
-const (
-	version uint8 = 1
+type (
+	DocumentID = uint64
+	Document   struct {
+		Term          string     `json:"term"`
+		DocId         DocumentID `json:"doc_id"`
+		TermFrequency uint32     `json:"term_frequency"`
+	}
 )
 
 type Segments struct {
-	Entries [][]segments_disk_writer.Document `json:"segments"`
+	Entries [][]Document `json:"segments"`
 }

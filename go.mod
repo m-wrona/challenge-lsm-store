@@ -1,4 +1,4 @@
-module segments-disk-writer
+module challenge-lsm-store
 
 go 1.22.3
 

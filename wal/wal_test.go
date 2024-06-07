@@ -2,10 +2,10 @@ package wal_test
 
 import (
 	"bytes"
+	"challenge-lsm-store/wal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io"
-	"segments-disk-writer/wal"
 	"testing"
 )
 
