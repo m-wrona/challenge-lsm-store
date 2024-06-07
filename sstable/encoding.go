@@ -6,7 +6,7 @@ import (
 	"io"
 )
 
-func encode(key []byte, value []byte, w io.Writer) (int, error) {
+func encode(w io.Writer, key []byte, value []byte) (int, error) {
 	bytes := 0
 
 	keyLen := encodeInt(len(key))
@@ -71,8 +71,21 @@ func decode(r io.Reader) ([]byte, []byte, error) {
 	return key, value, err
 }
 
-func encodeKeyOffset(key []byte, offset int, w io.Writer) (int, error) {
-	return encode(key, encodeInt(offset), w)
+func encodeKeyOffset(w io.Writer, key []byte, offset int) (int, error) {
+	return encode(w, key, encodeInt(offset))
+}
+
+func decodeKeyOffset(r io.Reader) ([]byte, int, error) {
+	key, value, err := decode(r)
+	if err != nil && err != io.EOF {
+		return nil, 0, err
+	}
+	if err == io.EOF {
+		return nil, 0, nil
+	}
+
+	offset := decodeInt(value)
+	return key, offset, nil
 }
 
 func encodeInt(x int) []byte {
@@ -84,19 +97,4 @@ func encodeInt(x int) []byte {
 
 func decodeInt(encoded []byte) int {
 	return int(binary.BigEndian.Uint64(encoded))
-}
-
-func encodeIntPair(x, y int) []byte {
-	var encoded [16]byte
-	binary.BigEndian.PutUint64(encoded[0:8], uint64(x))
-	binary.BigEndian.PutUint64(encoded[8:], uint64(y))
-
-	return encoded[:]
-}
-
-func decodeIntPair(encoded []byte) (int, int) {
-	x := int(binary.BigEndian.Uint64(encoded[0:8]))
-	y := int(binary.BigEndian.Uint64(encoded[8:]))
-
-	return x, y
 }

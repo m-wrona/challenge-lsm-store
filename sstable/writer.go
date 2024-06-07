@@ -34,18 +34,18 @@ func NewWriter(
 }
 
 func (w *Writer) Write(key, value []byte) error {
-	dataBytes, err := encode(key, value, w.dataWriter)
+	dataBytes, err := encode(w.dataWriter, key, value)
 	if err != nil {
 		return fmt.Errorf("data write error: %w", err)
 	}
 
-	indexBytes, err := encodeKeyOffset(key, w.dataPos, w.indexWriter)
+	indexBytes, err := encodeKeyOffset(w.indexWriter, key, w.dataPos)
 	if err != nil {
 		return fmt.Errorf("index write error: %w", err)
 	}
 
 	if w.keys%sparseKeyDistance == 0 {
-		if _, err := encodeKeyOffset(key, w.indexPos, w.sparseIndexWriter); err != nil {
+		if _, err := encodeKeyOffset(w.sparseIndexWriter, key, w.indexPos); err != nil {
 			return fmt.Errorf("sparse index write error: %w", err)
 		}
 	}

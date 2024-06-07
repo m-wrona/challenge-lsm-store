@@ -75,14 +75,13 @@ func (r *Reader) searchInIndex(from, to int, searchKey []byte) (int, bool, error
 	}
 
 	for {
-		key, value, err := decode(r.indexReader)
+		key, offset, err := decodeKeyOffset(r.indexReader)
 		if err != nil && err != io.EOF {
 			return 0, false, fmt.Errorf("failed to read: %w", err)
 		}
 		if err == io.EOF {
 			return 0, false, nil
 		}
-		offset := decodeInt(value)
 
 		if bytes.Equal(key, searchKey) {
 			return offset, true, nil
@@ -108,15 +107,13 @@ func (r *Reader) searchInSparseIndex(searchKey []byte) (int, int, bool, error) {
 
 	from := -1
 	for {
-		key, value, err := decode(r.sparseIndexReader)
+		key, offset, err := decodeKeyOffset(r.sparseIndexReader)
 		if err != nil && err != io.EOF {
 			return 0, 0, false, err
 		}
 		if err == io.EOF {
 			return from, 0, from != -1, nil
 		}
-
-		offset := decodeInt(value)
 
 		cmp := bytes.Compare(key, searchKey)
 		if cmp == 0 {
