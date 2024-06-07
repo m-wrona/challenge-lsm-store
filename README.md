@@ -1,4 +1,4 @@
-# segments-disk-writer
+# challenge-lsm-store
 
 Coding challenge 
 
