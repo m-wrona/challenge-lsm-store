@@ -55,7 +55,7 @@ func (m *Memtable) Delete(key []byte) ([]byte, bool) {
 	return nil, false
 }
 
-func (m *Memtable) GetSize() int {
+func (m *Memtable) Size() int {
 	return m.size
 }
 

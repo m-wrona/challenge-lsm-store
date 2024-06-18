@@ -47,7 +47,7 @@ func Test_WAL_WriteRead(t *testing.T) {
 			writer := testWriter{
 				buff: bytes.NewBuffer(nil),
 			}
-			w := wal.NewWriter(&writer, writer.Sync)
+			w := wal.NewWriter(&writer, writer.Sync, nil)
 			for _, content := range tt.content {
 				err := w.Write(content)
 				require.Nil(t, err, "write error")

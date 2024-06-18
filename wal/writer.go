@@ -7,18 +7,21 @@ import (
 )
 
 type WriterSync = func() error
+type WriterDelete = func() error
 
 type Writer struct {
 	writer         io.WriteCloser
 	checksumWriter *storageio.ChecksumWriter
 	sync           WriterSync
+	delete         WriterDelete
 }
 
-func NewWriter(w io.WriteCloser, sync WriterSync) *Writer {
+func NewWriter(w io.WriteCloser, sync WriterSync, delete WriterDelete) *Writer {
 	return &Writer{
 		writer:         w,
 		checksumWriter: storageio.NewChecksumWriter(w),
 		sync:           sync,
+		delete:         delete,
 	}
 }
 
@@ -44,4 +47,8 @@ func (w *Writer) Write(bytes []byte) error {
 func (w *Writer) Close() error {
 	w.checksumWriter.Clear()
 	return w.writer.Close()
+}
+
+func (w *Writer) Delete() error {
+	return w.delete()
 }

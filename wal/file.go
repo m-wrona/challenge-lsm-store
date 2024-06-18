@@ -25,5 +25,7 @@ func NewFileWriter(path string) (*Writer, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewWriter(file, file.Sync), nil
+	return NewWriter(file, file.Sync, func() error {
+		return os.Remove(path)
+	}), nil
 }
