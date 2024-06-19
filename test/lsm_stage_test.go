@@ -13,7 +13,7 @@ import (
 const (
 	// test related settings
 	maxRetries = 20
-	retryDelay = 10 * time.Millisecond
+	retryDelay = 50 * time.Millisecond
 
 	// store related settings
 	inMemoryThreshold   = 1000000 //bigger threshold to make sure no file dump happens quickly
