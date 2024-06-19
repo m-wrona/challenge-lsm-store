@@ -1,10 +1,10 @@
 package sstable_test
 
 import (
+	"bytes"
 	"challenge-lsm-store/sstable"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"os"
 	"testing"
 )
 
@@ -85,21 +85,17 @@ func Test_SSTable_WriteRead(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dirPath, err := os.MkdirTemp(t.TempDir(), "*")
-			require.NoError(t, err, "create temp dir")
-
-			writer, err := sstable.NewFileWriter(dirPath)
-			require.NoError(t, err, "could not create file writer")
-			defer writer.Close()
+			dataBuff := &closeableWriter{buff: bytes.NewBuffer(nil)}
+			indexBuff := &closeableWriter{buff: bytes.NewBuffer(nil)}
+			sparseIndexBuff := &closeableWriter{buff: bytes.NewBuffer(nil)}
+			writer := sstable.NewWriter(dataBuff, indexBuff, sparseIndexBuff)
 
 			for _, pair := range tt.in {
 				err := writer.Write(pair.Key, pair.Value)
 				require.NoError(t, err, "could not write to file")
 			}
 
-			reader, err := sstable.NewFileReader(dirPath)
-			require.NoError(t, err, "could not create file reader")
-			defer reader.Close()
+			reader := sstable.NewReader(dataBuff.Reader(), indexBuff.Reader(), sparseIndexBuff.Reader())
 
 			for _, result := range tt.exp {
 				v, ok, err := reader.Find(result.Key)
