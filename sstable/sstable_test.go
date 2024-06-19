@@ -85,18 +85,17 @@ func Test_SSTable_WriteRead(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dataBuff := &closeableWriter{buff: bytes.NewBuffer(nil)}
-			indexBuff := &closeableWriter{buff: bytes.NewBuffer(nil)}
-			sparseIndexBuff := &closeableWriter{buff: bytes.NewBuffer(nil)}
-			writer := sstable.NewWriter(dataBuff, indexBuff, sparseIndexBuff)
+			dataWriter := &closeableWriter{buff: bytes.NewBuffer(nil)}
+			indexWriter := &closeableWriter{buff: bytes.NewBuffer(nil)}
+			sparseIndexWriter := &closeableWriter{buff: bytes.NewBuffer(nil)}
 
+			writer := sstable.NewWriter(dataWriter, indexWriter, sparseIndexWriter)
 			for _, pair := range tt.in {
 				err := writer.Write(pair.Key, pair.Value)
 				require.NoError(t, err, "could not write to file")
 			}
 
-			reader := sstable.NewReader(dataBuff.Reader(), indexBuff.Reader(), sparseIndexBuff.Reader())
-
+			reader := sstable.NewReader(dataWriter.Reader(), indexWriter.Reader(), sparseIndexWriter.Reader())
 			for _, result := range tt.exp {
 				v, ok, err := reader.Find(result.Key)
 				require.NoError(t, err, "could not read from file")
