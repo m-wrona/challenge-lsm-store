@@ -84,9 +84,11 @@ func Test_LSM_MemoryStorage_Put(t *testing.T) {
 }
 
 func Test_LSM_MemoryStorage_Write(t *testing.T) {
+	// TODO implement this
 	t.Skip("check if memory can be dumped into a file")
 }
 
 func Test_LSM_MemoryStorage_Clear(t *testing.T) {
+	// TODO implement this
 	t.Skip("check if WAL is deleted once memory is cleared")
 }

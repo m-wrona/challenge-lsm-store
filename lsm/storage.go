@@ -55,6 +55,9 @@ func (s *osStorageProvider) NewMemoryStorage() (*memoryStorage, error) {
 
 func (s *osStorageProvider) NewSSTableWriter() (*sstable.Writer, error) {
 	dir := fmt.Sprintf("%s/%s/%d", s.cfg.Dir, tablesDir, time.Now().Unix())
+	if err := os.MkdirAll(dir, dirPerm); err != nil {
+		return nil, err
+	}
 	s.tablesDir = append(s.tablesDir, dir)
 	return sstable.NewFileWriter(dir)
 }
