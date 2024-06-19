@@ -83,7 +83,6 @@ func (r *Reader) searchInIndex(from, to int, searchKey []byte) (int, bool, error
 			return 0, false, nil
 		}
 
-		println(string(key))
 		if bytes.Equal(key, searchKey) {
 			return offset, true, nil
 		}

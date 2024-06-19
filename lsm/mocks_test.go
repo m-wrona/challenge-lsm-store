@@ -12,14 +12,17 @@ type closeableBuffer struct {
 	writeErr error
 }
 
+// TODO simplify mock to make it more handy during test case preparation phase
 type mockStorageProvider struct {
 	memoryStorageErr error
 
 	walBuffers   []*closeableBuffer
 	memoryTables []*memtable.Memtable
 
-	tableWriters   []*closeableBuffer
-	tableWriterErr error
+	tableDataWriters        []*closeableBuffer
+	tableIndexWriters       []*closeableBuffer
+	tableSparseIndexWriters []*closeableBuffer
+	tableWriterErr          error
 
 	files    []*fileStorage
 	filesErr error
@@ -42,6 +45,10 @@ func (b *closeableBuffer) Close() error {
 
 func (b *closeableBuffer) Bytes() []byte {
 	return b.buff.Bytes()
+}
+
+func (b *closeableBuffer) Seek(offset int64, whence int) (int64, error) {
+	return bytes.NewReader(b.Bytes()).Seek(offset, whence)
 }
 
 func fnStub() error {
@@ -70,16 +77,39 @@ func (m *mockStorageProvider) NewSSTableWriter() (*sstable.Writer, error) {
 		return nil, m.tableWriterErr
 	}
 
-	buff := &closeableBuffer{buff: bytes.NewBuffer(nil)}
-	m.tableWriters = append(m.tableWriters, buff)
+	dataBuff := &closeableBuffer{buff: bytes.NewBuffer(nil)}
+	m.tableDataWriters = append(m.tableDataWriters, dataBuff)
+
+	indexBuff := &closeableBuffer{buff: bytes.NewBuffer(nil)}
+	m.tableIndexWriters = append(m.tableIndexWriters, indexBuff)
+
+	sparseIndexBuff := &closeableBuffer{buff: bytes.NewBuffer(nil)}
+	m.tableSparseIndexWriters = append(m.tableSparseIndexWriters, sparseIndexBuff)
 
 	return sstable.NewWriter(
-		buff,
-		&closeableBuffer{buff: bytes.NewBuffer(nil)},
-		&closeableBuffer{buff: bytes.NewBuffer(nil)},
+		dataBuff,
+		indexBuff,
+		sparseIndexBuff,
 	), nil
 }
 
 func (m *mockStorageProvider) FilesStorage() ([]*fileStorage, error) {
 	return m.files, m.filesErr
+}
+
+func (m *mockStorageProvider) MoveSSTablesToFiles() {
+	for idx, _ := range m.tableDataWriters {
+		f := &fileStorage{
+			reader: sstable.NewReader(
+				m.tableDataWriters[idx],
+				m.tableIndexWriters[idx],
+				m.tableSparseIndexWriters[idx],
+			),
+		}
+		m.files = append(m.files, f)
+	}
+
+	m.tableDataWriters = nil
+	m.tableIndexWriters = nil
+	m.tableSparseIndexWriters = nil
 }
