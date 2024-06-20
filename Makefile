@@ -22,9 +22,21 @@ go-lint: install-govulncheck install-golangci
 .PHONY: lint
 lint: go-lint
 
+.PHONY: test-short
+test-short:
+	go test -cover -coverprofile=.coverage.out -count=10 -short -race -timeout 10s ./...
+
 .PHONY: test
 test:
-	go test -cover -race -count=100 -short -race ./...
+	go test -cover -coverprofile=.coverage.out -count=2 -race -timeout 300s ./...
+
+.PHONY: coverage-show
+coverage-show:
+	go tool cover -func=.coverage.out
+
+.PHONY: coverage-html
+coverage-html:
+	go tool cover -html=.coverage.out
 
 .PHONY: bench
 bench:

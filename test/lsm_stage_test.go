@@ -2,19 +2,17 @@ package test
 
 import (
 	"challenge-lsm-store/lsm"
+	"context"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"os"
+	"sync"
 	"testing"
 	"time"
 )
 
 const (
-	// test related settings
-	maxRetries = 20
-	retryDelay = 50 * time.Millisecond
-
 	// store related settings
 	inMemoryThreshold   = 1000000 //bigger threshold to make sure no file dump happens quickly
 	fileMemoryThreshold = 1       //min threshold to make sure everything is dumped into a file at once
@@ -26,7 +24,9 @@ const (
 )
 
 type LSMStage struct {
-	t       *testing.T
+	t  *testing.T
+	wg sync.WaitGroup
+
 	store   *lsm.Tree
 	tempDir string
 
@@ -148,6 +148,7 @@ func (s *LSMStage) TableDirectoriesAreNotPresent() *LSMStage {
 
 func (s *LSMStage) WaitTillNoWALFilesArePresent() *LSMStage {
 	// TODO use some nice lib for re-tries here
+	time.Sleep(retryDelay)
 	for i := 0; i < maxRetries; i++ {
 		walDir := fmt.Sprintf("%s/%s", s.tempDir, dirWal)
 		files, err := os.ReadDir(walDir)
@@ -158,5 +159,37 @@ func (s *LSMStage) WaitTillNoWALFilesArePresent() *LSMStage {
 
 		time.Sleep(retryDelay)
 	}
+	return s
+}
+
+func (s *LSMStage) spawn(ctx context.Context, routines int, ticker *time.Ticker, fn func()) *LSMStage {
+	s.wg.Add(routines)
+	for i := 0; i < routines; i++ {
+		go func() {
+			defer s.wg.Done()
+
+			for {
+				select {
+				case <-ctx.Done():
+					return
+
+				case <-ticker.C:
+					fn()
+				}
+			}
+
+		}()
+	}
+	return s
+}
+
+func (s *LSMStage) ManyClientsDoWithFreq(ctx context.Context, fn func()) *LSMStage {
+	ticker := time.NewTicker(longTestTickerFreq)
+	s.spawn(ctx, longTestRoutineCount, ticker, fn)
+	return s
+}
+
+func (s *LSMStage) WaitForClients() *LSMStage {
+	s.wg.Wait()
 	return s
 }

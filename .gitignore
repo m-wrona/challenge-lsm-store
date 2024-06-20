@@ -10,6 +10,7 @@
 segments*.json
 .idea
 vendor
+.coverage.out
 
 # Test binary, built with `go test -c`
 *.test
