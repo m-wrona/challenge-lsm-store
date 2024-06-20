@@ -7,6 +7,8 @@ import (
 	"challenge-lsm-store/wal"
 	"fmt"
 	"os"
+	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -18,12 +20,14 @@ const (
 )
 
 type osStorageProvider struct {
-	cfg  Config
-	buff *bytes.Buffer
+	cfg     Config
+	buff    *bytes.Buffer
+	counter atomic.Uint32
 
 	// TODO tables dir kept created directories for tables.
 	// in the future it may be cache or should be removed since it's workaround for now */
 	tablesDir []string
+	mu        sync.RWMutex //needed for now for tables dir
 }
 
 func NewOSStorageProvider(cfg Config) (*osStorageProvider, error) {
@@ -41,7 +45,7 @@ func NewOSStorageProvider(cfg Config) (*osStorageProvider, error) {
 
 func (s *osStorageProvider) NewMemoryStorage() (*memoryStorage, error) {
 	writer, err := wal.NewFileWriter(
-		fmt.Sprintf("%s/%s/%d.wal", s.cfg.Dir, walDir, time.Now().Unix()),
+		fmt.Sprintf("%s/%s/%d-%d.wal", s.cfg.Dir, walDir, s.counter.Add(1), time.Now().Unix()),
 	)
 	if err != nil {
 		return nil, err
@@ -54,16 +58,22 @@ func (s *osStorageProvider) NewMemoryStorage() (*memoryStorage, error) {
 }
 
 func (s *osStorageProvider) NewSSTableWriter() (*sstable.Writer, error) {
-	dir := fmt.Sprintf("%s/%s/%d", s.cfg.Dir, tablesDir, time.Now().Unix())
+	dir := fmt.Sprintf("%s/%s/%d-%d", s.cfg.Dir, tablesDir, s.counter.Add(1), time.Now().Unix())
 	if err := os.MkdirAll(dir, dirPerm); err != nil {
 		return nil, err
 	}
+
+	s.mu.Lock()
 	s.tablesDir = append(s.tablesDir, dir)
+	s.mu.Unlock()
+
 	return sstable.NewFileWriter(dir)
 }
 
 func (s *osStorageProvider) FilesStorage() ([]*fileStorage, error) {
 	// TODO check OS dir to get tables dirs
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	files := make([]*fileStorage, 0)
 
 	for _, dir := range s.tablesDir {

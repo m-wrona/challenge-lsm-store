@@ -16,10 +16,12 @@ type Tree struct {
 	cfg             Config
 	storageProvider storageProvider
 
+	//TODO move to separate structure to manage it more easily
 	flushingMu sync.RWMutex
 	flushing   map[*memoryStorage]struct{}
 
-	current *memoryStorage
+	currentMu sync.RWMutex
+	current   *memoryStorage
 }
 
 // TODO replace config with options to make default settings possible
@@ -38,72 +40,84 @@ func New(storageProvider storageProvider, cfg Config) (*Tree, error) {
 }
 
 func (t *Tree) Put(key []byte, value []byte) error {
-	if err := t.current.Put(key, value); err != nil {
+	t.currentMu.Lock()
+	defer t.currentMu.Unlock()
+	err := t.current.Put(key, value)
+
+	if err != nil {
 		return err
 	}
 
 	if t.current.Size() > t.cfg.MemoryThreshold {
-		if err := t.newStorage(); err != nil {
+		newMemoryStorage, err := t.storageProvider.NewMemoryStorage()
+		if err != nil {
 			return err
 		}
+
+		old := t.current
+		t.current = newMemoryStorage
+		go t.dumpToFile(old)
 	}
 
 	return nil
 }
 
-func (t *Tree) newStorage() error {
-	newStorage, err := t.storageProvider.NewMemoryStorage()
-	if err != nil {
-		return err
-	}
-
+// TODO delegate it with flushing map & its mu to separate struct
+func (t *Tree) dumpToFile(old *memoryStorage) {
 	writer, err := t.storageProvider.NewSSTableWriter()
 	if err != nil {
-		return err
+		//TODO log error here
+		return
 	}
 
-	old := t.current
-	t.current = newStorage
 	t.flushingMu.Lock()
 	t.flushing[old] = struct{}{}
 	t.flushingMu.Unlock()
 
-	go func() {
-		defer writer.Close() // TODO log error
+	defer writer.Close() // TODO log error
 
-		if err := old.Write(writer); err != nil {
+	if err := old.Write(writer); err != nil {
+		// TODO log error
+		// TODO should we retry here or just try to move WAL to SSTable by some manual actions using CLI?
+	} else {
+		t.flushingMu.Lock()
+		delete(t.flushing, old)
+		t.flushingMu.Unlock()
+
+		if err := old.Clear(); err != nil {
 			// TODO log error
-			// TODO should we retry here or just try to move WAL to SSTable by some manual actions using CLI?
-		} else {
-			t.flushingMu.Lock()
-			delete(t.flushing, old)
-			t.flushingMu.Unlock()
-
-			_ = old.Clear() // TODO log error
+			println(err.Error())
 		}
-	}()
-
-	return nil
+	}
 }
 
 func (t *Tree) Get(key []byte) ([]byte, error) {
-	// check current memory
+	t.currentMu.RLock()
 	value, found := t.current.Get(key)
+	t.currentMu.RUnlock()
 	if found {
 		return value, nil
 	}
 
-	// check memory which is currently being dumped to storage
+	value, ok := t.findInFlushingMemory(key)
+	if ok {
+		return value, nil
+	}
+
+	return t.findInFiles(key)
+}
+
+func (t *Tree) findInFlushingMemory(key []byte) ([]byte, bool) {
 	t.flushingMu.RLock()
 	defer t.flushingMu.RUnlock()
 	for f, _ := range t.flushing {
 		value, found := f.Get(key)
 		if found {
-			return value, nil
+			return value, true
 		}
 	}
 
-	return t.findInFiles(key)
+	return nil, false
 }
 
 func (t *Tree) findInFiles(key []byte) ([]byte, error) {

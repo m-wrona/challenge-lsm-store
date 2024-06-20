@@ -2,6 +2,7 @@ package test
 
 import (
 	"context"
+	"os"
 	"testing"
 	"time"
 )
@@ -27,4 +28,24 @@ func LongTestRunOnly(t *testing.T) (context.Context, context.CancelFunc) {
 		t.Skip("skipping test in short mode.")
 	}
 	return context.WithTimeout(context.Background(), longTestsDuration)
+}
+
+func ListNonEmptyFiles(dir string) ([]os.DirEntry, error) {
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+
+	nonEmpty := make([]os.DirEntry, 0, len(files))
+	for _, f := range files {
+		stat, err := f.Info()
+		if err != nil {
+			return nil, err
+		}
+		if stat.Size() > 0 {
+			nonEmpty = append(nonEmpty, f)
+		}
+	}
+
+	return nonEmpty, nil
 }

@@ -106,7 +106,7 @@ func (s *LSMStage) KeyValuesHaveBeenPut(v ...pair) *LSMStage {
 
 func (s *LSMStage) WALFilesArePresent() *LSMStage {
 	walDir := fmt.Sprintf("%s/%s", s.tempDir, dirWal)
-	files, err := os.ReadDir(walDir)
+	files, err := ListNonEmptyFiles(walDir)
 	require.Nil(s.t, err, "WAL read dir error")
 	assert.NotEmpty(s.t, files, "no WAL files found in: %s", walDir)
 	return s
@@ -114,7 +114,7 @@ func (s *LSMStage) WALFilesArePresent() *LSMStage {
 
 func (s *LSMStage) WALFilesAreNotPresent() *LSMStage {
 	walDir := fmt.Sprintf("%s/%s", s.tempDir, dirWal)
-	files, err := os.ReadDir(walDir)
+	files, err := ListNonEmptyFiles(walDir)
 	require.Nil(s.t, err, "WAL read dir error")
 	assert.Emptyf(s.t, files, "WAL files found in %s: %+v", walDir, files)
 	return s
@@ -122,14 +122,14 @@ func (s *LSMStage) WALFilesAreNotPresent() *LSMStage {
 
 func (s *LSMStage) TableDirectoriesArePresent() *LSMStage {
 	tablesDir := fmt.Sprintf("%s/%s", s.tempDir, dirTables)
-	files, err := os.ReadDir(fmt.Sprintf("%s/%s", s.tempDir, dirTables))
+	files, err := ListNonEmptyFiles(fmt.Sprintf("%s/%s", s.tempDir, dirTables))
 	require.Nil(s.t, err, "tables read dir error")
 	assert.NotEmpty(s.t, files, "no table directories found in: %s", tablesDir)
 
 	for _, tableDir := range files {
 		assert.Truef(s.t, tableDir.IsDir(), "not a directory: %s", tableDir.Name())
 		subDirPath := fmt.Sprintf("%s/%s/%s", s.tempDir, dirTables, tableDir.Name())
-		tableFiles, err := os.ReadDir(subDirPath)
+		tableFiles, err := ListNonEmptyFiles(subDirPath)
 		require.Nil(s.t, err, "table dir read error")
 		assert.Equalf(s.t, expFilesForEachTable, len(tableFiles), "unexpected files found in table dir %s: %+v",
 			subDirPath, tableFiles)
@@ -140,7 +140,7 @@ func (s *LSMStage) TableDirectoriesArePresent() *LSMStage {
 
 func (s *LSMStage) TableDirectoriesAreNotPresent() *LSMStage {
 	tablesDir := fmt.Sprintf("%s/%s", s.tempDir, dirTables)
-	files, err := os.ReadDir(fmt.Sprintf("%s/%s", s.tempDir, dirTables))
+	files, err := ListNonEmptyFiles(fmt.Sprintf("%s/%s", s.tempDir, dirTables))
 	require.Nil(s.t, err, "tables read dir error")
 	assert.Emptyf(s.t, files, "table directories found in %s: %+v", tablesDir, files)
 	return s
@@ -148,10 +148,9 @@ func (s *LSMStage) TableDirectoriesAreNotPresent() *LSMStage {
 
 func (s *LSMStage) WaitTillNoWALFilesArePresent() *LSMStage {
 	// TODO use some nice lib for re-tries here
-	time.Sleep(retryDelay)
 	for i := 0; i < maxRetries; i++ {
 		walDir := fmt.Sprintf("%s/%s", s.tempDir, dirWal)
-		files, err := os.ReadDir(walDir)
+		files, err := ListNonEmptyFiles(walDir)
 		require.Nil(s.t, err, "WAL read dir error")
 		if len(files) == 0 {
 			break
