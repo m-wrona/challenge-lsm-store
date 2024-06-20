@@ -90,6 +90,8 @@ func (s *DBStage) SegmentsArePresent() *DBStage {
 }
 
 func (s *DBStage) SegmentsAreLoadedIntoStore() *DBStage {
+	// TODO this should be DB level boot operation really so files will be always there and
+	// in the background we could start loading some of the data into memory to warm-up the cache...
 	var wg sync.WaitGroup
 	start := time.Now()
 	s.t.Logf("loading segments...")
@@ -108,6 +110,10 @@ func (s *DBStage) SegmentsAreLoadedIntoStore() *DBStage {
 				memoryStorage.Load(doc.Key(), docBytes)
 			}
 
+			if si%2 == 0 {
+				// to make only part of data available in memory
+				s.store.LoadIntoMemory(memoryStorage)
+			}
 			err = s.store.WriteToFile(memoryStorage)
 			require.Nil(s.t, err, "load into store error")
 
@@ -119,7 +125,7 @@ func (s *DBStage) SegmentsAreLoadedIntoStore() *DBStage {
 	return s
 }
 
-func (s *DBStage) RandomDocumentsAreCheckedFromSegment(nr int) *DBStage {
+func (s *DBStage) RandomDocumentsAreChosenFromSegments(nr int) *DBStage {
 	s.documents = make([]ext.Document, 0)
 	for range nr {
 		sIdx := s.random.IntN(len(s.segments.Entries))

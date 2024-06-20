@@ -38,7 +38,7 @@ func Test_DB_ShouldLoadSegmentsFileFromDisk(t *testing.T) {
 
 	t.Run("get random documents from store", func(t *testing.T) {
 		stage.When().
-			RandomDocumentsAreCheckedFromSegment(10)
+			RandomDocumentsAreChosenFromSegments(100)
 
 		stage.Then().
 			DocumentsArePresentInStore()

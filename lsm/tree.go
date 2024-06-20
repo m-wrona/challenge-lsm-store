@@ -71,6 +71,17 @@ func (t *Tree) Put(key []byte, value []byte) error {
 	return nil
 }
 
+// LoadIntoMemory loads data from storage into current memory without touching WAL
+// TODO this fn is rather for testing purposes now (which is bad) to speed up import
+func (t *Tree) LoadIntoMemory(memoryStorage *MemoryStorage) {
+	t.currentMu.Lock()
+	defer t.currentMu.Unlock()
+
+	for pair := range memoryStorage.memory.GetAll() {
+		t.current.Load(pair.GetKey(), pair.GetValue())
+	}
+}
+
 // WriteToFile moves data from memory into files
 // TODO delegate it with flushing map & its mu to separate struct
 func (t *Tree) WriteToFile(memoryStorage *MemoryStorage) error {
