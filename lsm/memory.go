@@ -8,52 +8,58 @@ import (
 	"sync"
 )
 
-// memoryStorage represents data kept only in memory for now but backed-up using WAL
-type memoryStorage struct {
+// MemoryStorage represents data kept only in memory for now but backed-up using WAL
+type MemoryStorage struct {
 	memory *memtable.Memtable
 	wal    *wal.Writer
 	buff   *bytes.Buffer
 	mu     sync.RWMutex
 }
 
-func (t *memoryStorage) Size() int {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-	return t.memory.Size()
+func (s *MemoryStorage) Size() int {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.memory.Size()
 }
 
-func (t *memoryStorage) Get(key []byte) ([]byte, bool) {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-	return t.memory.Get(key)
+func (s *MemoryStorage) Get(key []byte) ([]byte, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.memory.Get(key)
 }
 
-func (t *memoryStorage) Put(key []byte, value []byte) error {
-	t.mu.Lock()
-	defer t.mu.Unlock()
+// Put loads value into a memory and updates WAL about given change
+func (s *MemoryStorage) Put(key []byte, value []byte) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	defer t.buff.Reset()
+	defer s.buff.Reset()
 	walEntry := wal.EntryV1{
 		Key:   key,
 		Value: value,
 	}
-	if err := walEntry.Encode(t.buff); err != nil {
+	if err := walEntry.Encode(s.buff); err != nil {
 		return err
 	}
-	if err := t.wal.Write(t.buff.Bytes()); err != nil {
+	if err := s.wal.Write(s.buff.Bytes()); err != nil {
 		return err
 	}
 
 	// memory
-	t.memory.Upsert(key, value)
+	s.memory.Upsert(key, value)
 	return nil
 }
 
-func (t *memoryStorage) Write(writer *sstable.Writer) error {
-	t.mu.RLock() // because it only reads from memory
-	defer t.mu.RUnlock()
+// Load loads (imports) value into a memory without keeping WAL about it
+func (s *MemoryStorage) Load(key []byte, value []byte) {
+	s.memory.Upsert(key, value)
+}
 
-	for e := range t.memory.GetAll() {
+func (s *MemoryStorage) Write(writer *sstable.Writer) error {
+	s.mu.RLock() // because it only reads from memory
+	defer s.mu.RUnlock()
+
+	for e := range s.memory.GetAll() {
 		if err := writer.Write(e.GetKey(), e.GetValue()); err != nil {
 			return err
 		}
@@ -62,18 +68,18 @@ func (t *memoryStorage) Write(writer *sstable.Writer) error {
 	return nil
 }
 
-func (t *memoryStorage) Clear() error {
-	t.mu.Lock()
-	defer t.mu.Unlock()
+func (s *MemoryStorage) Clear() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	if err := t.wal.Close(); err != nil {
+	if err := s.wal.Close(); err != nil {
 		return err
 	}
-	if err := t.wal.Delete(); err != nil {
+	if err := s.wal.Delete(); err != nil {
 		return err
 	}
 
-	t.memory.Clear()
+	s.memory.Clear()
 
 	return nil
 }

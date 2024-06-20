@@ -1,3 +1,6 @@
+/*
+Basic component/integration tests for LSM store and focusing on its functionality as a whole.
+*/
 package test
 
 import (

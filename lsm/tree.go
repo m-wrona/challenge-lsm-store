@@ -6,7 +6,7 @@ import (
 )
 
 type storageProvider interface {
-	NewMemoryStorage() (*memoryStorage, error)
+	NewMemoryStorage() (*MemoryStorage, error)
 	NewSSTableWriter() (*sstable.Writer, error)
 	FilesStorage() ([]*fileStorage, error)
 }
@@ -18,10 +18,10 @@ type Tree struct {
 
 	//TODO move to separate structure to manage it more easily
 	flushingMu sync.RWMutex
-	flushing   map[*memoryStorage]struct{}
+	flushing   map[*MemoryStorage]struct{}
 
 	currentMu sync.RWMutex
-	current   *memoryStorage
+	current   *MemoryStorage
 }
 
 // TODO replace config with options to make default settings possible
@@ -35,7 +35,7 @@ func New(storageProvider storageProvider, cfg Config) (*Tree, error) {
 		cfg:             cfg,
 		storageProvider: storageProvider,
 		current:         storage,
-		flushing:        make(map[*memoryStorage]struct{}),
+		flushing:        make(map[*MemoryStorage]struct{}),
 	}, nil
 }
 
@@ -56,39 +56,49 @@ func (t *Tree) Put(key []byte, value []byte) error {
 
 		old := t.current
 		t.current = newMemoryStorage
-		go t.dumpToFile(old)
+		go func() {
+			// TODO log error here
+			_ = t.WriteToFile(old)
+			// TODO if we couldn't move data from memory into file I guess we should revert operation
+
+			// TODO it could take a while till old memory storage will appear in flushing area thus consider 2 options:
+			// 1) run write to file directly (not as a routine) which may block put for much longer
+			// 2) we can add old storage to flushing map here and run write to file anyways
+			// 3) write to file can return a channel which will signal when writing started thus when old memory is in flushing area already
+		}()
 	}
 
 	return nil
 }
 
+// WriteToFile moves data from memory into files
 // TODO delegate it with flushing map & its mu to separate struct
-func (t *Tree) dumpToFile(old *memoryStorage) {
+func (t *Tree) WriteToFile(memoryStorage *MemoryStorage) error {
 	writer, err := t.storageProvider.NewSSTableWriter()
 	if err != nil {
-		//TODO log error here
-		return
+		return err
 	}
 
 	t.flushingMu.Lock()
-	t.flushing[old] = struct{}{}
+	t.flushing[memoryStorage] = struct{}{}
 	t.flushingMu.Unlock()
 
 	defer writer.Close() // TODO log error
 
-	if err := old.Write(writer); err != nil {
-		// TODO log error
+	if err := memoryStorage.Write(writer); err != nil {
 		// TODO should we retry here or just try to move WAL to SSTable by some manual actions using CLI?
+		return err
 	} else {
 		t.flushingMu.Lock()
-		delete(t.flushing, old)
+		delete(t.flushing, memoryStorage)
 		t.flushingMu.Unlock()
 
-		if err := old.Clear(); err != nil {
-			// TODO log error
-			println(err.Error())
+		if err := memoryStorage.Clear(); err != nil {
+			return err
 		}
 	}
+
+	return nil
 }
 
 func (t *Tree) Get(key []byte) ([]byte, error) {

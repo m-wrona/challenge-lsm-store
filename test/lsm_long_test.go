@@ -1,3 +1,7 @@
+/*
+Additional component/integration tests for LSM store which focus on concurrency checks and
+some first bottlenecks that can occur.
+*/
 package test
 
 import (
@@ -8,7 +12,8 @@ import (
 )
 
 func Test_LSM_ShouldSupportManyClientsForMemoryWrite(t *testing.T) {
-	ctx, cancel := LongTestRunOnly(t)
+	LongTestRunOnly(t)
+	ctx, cancel := TestContext()
 	defer cancel()
 
 	stage := NewLSMStage(t)
@@ -33,7 +38,8 @@ func Test_LSM_ShouldSupportManyClientsForMemoryWrite(t *testing.T) {
 }
 
 func Test_LSM_ShouldSupportManyClientsForFileWrite(t *testing.T) {
-	ctx, cancel := LongTestRunOnly(t)
+	LongTestRunOnly(t)
+	ctx, cancel := TestContext()
 	defer cancel()
 
 	stage := NewLSMStage(t)
@@ -58,7 +64,8 @@ func Test_LSM_ShouldSupportManyClientsForFileWrite(t *testing.T) {
 }
 
 func Test_LSM_ShouldSupportManyClientsForMemoryRead(t *testing.T) {
-	ctx, cancel := LongTestRunOnly(t)
+	LongTestRunOnly(t)
+	ctx, cancel := TestContext()
 	defer cancel()
 
 	stage := NewLSMStage(t)
@@ -85,7 +92,8 @@ func Test_LSM_ShouldSupportManyClientsForMemoryRead(t *testing.T) {
 }
 
 func Test_LSM_ShouldSupportManyClientsForFileRead(t *testing.T) {
-	ctx, cancel := LongTestRunOnly(t)
+	LongTestRunOnly(t)
+	ctx, cancel := TestContext()
 	defer cancel()
 
 	stage := NewLSMStage(t)

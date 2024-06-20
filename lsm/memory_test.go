@@ -45,7 +45,7 @@ func Test_LSM_MemoryStorage_Put(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			writer := wal.NewWriter(tt.buff, fnStub, fnStub)
-			s := &memoryStorage{
+			s := &MemoryStorage{
 				memory: memtable.NewMemtable(),
 				wal:    writer,
 				buff:   bytes.NewBuffer(nil),

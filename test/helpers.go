@@ -23,10 +23,13 @@ type pair struct {
 	value []byte
 }
 
-func LongTestRunOnly(t *testing.T) (context.Context, context.CancelFunc) {
+func LongTestRunOnly(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
+}
+
+func TestContext() (context.Context, context.CancelFunc) {
 	return context.WithTimeout(context.Background(), longTestsDuration)
 }
 

@@ -70,8 +70,8 @@ func Test_LSM_Tree_GetFromMainMemoryTable(t *testing.T) {
 		cfg: Config{
 			MemoryThreshold: 1000,
 		},
-		flushing: make(map[*memoryStorage]struct{}),
-		current: &memoryStorage{
+		flushing: make(map[*MemoryStorage]struct{}),
+		current: &MemoryStorage{
 			memory: currentTable,
 		},
 	}
@@ -92,14 +92,14 @@ func Test_LSM_Tree_GetFromFlushingMemoryTable(t *testing.T) {
 		cfg: Config{
 			MemoryThreshold: 1000,
 		},
-		flushing: make(map[*memoryStorage]struct{}),
-		current: &memoryStorage{
+		flushing: make(map[*MemoryStorage]struct{}),
+		current: &MemoryStorage{
 			memory: memtable.NewMemtable(),
 		},
 	}
 	//AND value is present in older tables that are being dumped atm.
 	flushingTable := memtable.NewMemtable()
-	tree.flushing[&memoryStorage{
+	tree.flushing[&MemoryStorage{
 		memory: flushingTable,
 	}] = struct{}{}
 	flushingTable.Upsert([]byte("key1"), []byte("value1"))

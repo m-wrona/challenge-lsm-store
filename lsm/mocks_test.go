@@ -55,7 +55,7 @@ func fnStub() error {
 	return nil
 }
 
-func (m *mockStorageProvider) NewMemoryStorage() (*memoryStorage, error) {
+func (m *mockStorageProvider) NewMemoryStorage() (*MemoryStorage, error) {
 	if m.memoryStorageErr != nil {
 		return nil, m.memoryStorageErr
 	}
@@ -65,7 +65,7 @@ func (m *mockStorageProvider) NewMemoryStorage() (*memoryStorage, error) {
 	table := memtable.NewMemtable()
 	m.memoryTables = append(m.memoryTables, table)
 
-	return &memoryStorage{
+	return &MemoryStorage{
 		memory: table,
 		wal:    wal.NewWriter(buff, fnStub, fnStub),
 		buff:   bytes.NewBuffer(nil),
