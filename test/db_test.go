@@ -44,4 +44,13 @@ func Test_DB_ShouldLoadSegmentsFileFromDisk(t *testing.T) {
 			DocumentsArePresentInStore()
 	})
 
+	t.Run("calculate TF-IDF score", func(t *testing.T) {
+		stage.When().
+			TFIDFIsCalculated()
+
+		stage.Then().
+			TFIDFHasValue("great", 724183, 0.056542788).And().
+			TFIDFHasValue("database", 358742, 13.355104)
+	})
+
 }

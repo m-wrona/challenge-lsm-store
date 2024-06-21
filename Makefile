@@ -41,3 +41,8 @@ coverage-html:
 .PHONY: bench
 bench:
 	go test -bench . -test.benchmem -test.count 2 -test.benchtime 2s
+
+.PHONY: download-segments
+download-segments:
+	rm -f segments.json 2>/dev/null
+	wget https://storage.googleapis.com/weaviate-tech-challenges/db-engineer/segments.json

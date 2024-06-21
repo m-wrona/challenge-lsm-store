@@ -1,8 +1,9 @@
 package test
 
 import (
-	"challenge-lsm-store/ext"
 	"challenge-lsm-store/lsm"
+	"challenge-lsm-store/model"
+	"challenge-lsm-store/storageio"
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -27,8 +28,10 @@ type DBStage struct {
 	store   *lsm.Tree
 	tempDir string
 
-	segments  *ext.Segments
-	documents []ext.Document
+	segments  *model.Segments
+	documents []model.Document
+
+	tfidf *model.TFIDF
 }
 
 func NewDBStage(t *testing.T) *DBStage {
@@ -78,8 +81,8 @@ func (s *DBStage) StoreIsUpAndRunning(cfg lsm.Config) *DBStage {
 }
 
 func (s *DBStage) SegmentsAreLoadedFromReader(in io.Reader) *DBStage {
-	s.segments = &ext.Segments{}
-	err := ext.Read(in, json.Unmarshal, s.segments)
+	s.segments = &model.Segments{}
+	err := storageio.Read(in, json.Unmarshal, s.segments)
 	require.Nil(s.t, err, "read segments error")
 	return s
 }
@@ -126,7 +129,7 @@ func (s *DBStage) SegmentsAreLoadedIntoStore() *DBStage {
 }
 
 func (s *DBStage) RandomDocumentsAreChosenFromSegments(nr int) *DBStage {
-	s.documents = make([]ext.Document, 0)
+	s.documents = make([]model.Document, 0)
 	for range nr {
 		sIdx := s.random.IntN(len(s.segments.Entries))
 		docIdx := s.random.IntN(len(s.segments.Entries[sIdx]))
@@ -142,5 +145,21 @@ func (s *DBStage) DocumentsArePresentInStore() *DBStage {
 		assert.Nil(s.t, err, "get document error")
 		assert.NotEmptyf(s.t, v, "document not found in store: %s", doc)
 	}
+	return s
+}
+
+func (s *DBStage) TFIDFIsCalculated() *DBStage {
+	s.tfidf = model.NewTFIDF()
+	for _, segment := range s.segments.Entries {
+		for _, doc := range segment {
+			s.tfidf.Add(doc)
+		}
+	}
+	return s
+}
+
+func (s *DBStage) TFIDFHasValue(term model.Term, id model.DocumentID, expValue model.Freq) *DBStage {
+	require.NotNil(s.t, s.tfidf, "TF-IDF not calculated yet")
+	assert.Equalf(s.t, expValue, s.tfidf.TFIDF(term, id), "unexpected TF-IDF value - term: %s, id: %d", term, id)
 	return s
 }

@@ -1,4 +1,4 @@
-package ext
+package storageio
 
 import (
 	"encoding/json"
