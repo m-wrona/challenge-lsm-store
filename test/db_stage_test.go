@@ -99,6 +99,9 @@ func (s *DBStage) SegmentsAreLoadedIntoStore() *DBStage {
 	start := time.Now()
 	s.t.Logf("loading segments...")
 	for si, segment := range s.segments.Entries {
+		si := si // linter still raises issues for it...
+		segment := segment
+
 		wg.Add(1)
 
 		go func() {
@@ -130,7 +133,7 @@ func (s *DBStage) SegmentsAreLoadedIntoStore() *DBStage {
 
 func (s *DBStage) RandomDocumentsAreChosenFromSegments(nr int) *DBStage {
 	s.documents = make([]model.Document, 0)
-	for range nr {
+	for i := 0; i < nr; i++ {
 		sIdx := s.random.IntN(len(s.segments.Entries))
 		docIdx := s.random.IntN(len(s.segments.Entries[sIdx]))
 		s.documents = append(s.documents, s.segments.Entries[sIdx][docIdx])

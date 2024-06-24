@@ -131,7 +131,7 @@ func (t *Tree) Get(key []byte) ([]byte, error) {
 func (t *Tree) findInFlushingMemory(key []byte) ([]byte, bool) {
 	t.flushingMu.RLock()
 	defer t.flushingMu.RUnlock()
-	for f, _ := range t.flushing {
+	for f := range t.flushing {
 		value, found := f.Get(key)
 		if found {
 			return value, true

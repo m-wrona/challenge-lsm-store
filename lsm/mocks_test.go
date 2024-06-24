@@ -98,7 +98,7 @@ func (m *mockStorageProvider) FilesStorage() ([]*fileStorage, error) {
 }
 
 func (m *mockStorageProvider) MoveSSTablesToFiles() {
-	for idx, _ := range m.tableDataWriters {
+	for idx := range m.tableDataWriters {
 		f := &fileStorage{
 			reader: sstable.NewReader(
 				m.tableDataWriters[idx],

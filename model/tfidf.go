@@ -64,9 +64,9 @@ func (i *TFIDF) TFIDF(t Term, id DocumentID) Freq {
 func (i *TFIDF) Values() map[DocumentID][]TFIDFValue {
 	docs := make(map[DocumentID][]TFIDFValue)
 
-	for id, _ := range i.documents {
+	for id := range i.documents {
 		values := make([]TFIDFValue, 0)
-		for term, _ := range i.tf {
+		for term := range i.tf {
 			idf := i.TFIDF(term, id)
 			values = append(values, TFIDFValue{
 				ID:    id,

@@ -10,8 +10,7 @@ type closeableWriter struct {
 }
 
 type closeableReader struct {
-	reader   *bytes.Reader
-	writeErr error
+	reader *bytes.Reader
 }
 
 func (b *closeableWriter) Write(p []byte) (n int, err error) {
